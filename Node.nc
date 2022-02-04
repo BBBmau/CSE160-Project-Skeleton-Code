@@ -21,6 +21,10 @@ module Node{
 
    uses interface SimpleSend as Sender;
 
+   // Project 1
+   // uses interface Flooding;
+   uses interface Neighbor_Discovery;
+
    uses interface CommandHandler;
 }
 
@@ -65,7 +69,10 @@ implementation{
       call Sender.send(sendPackage, destination);
    }
 
-   event void CommandHandler.printNeighbors(){}
+   event void CommandHandler.printNeighbors(uint16_t source){
+      dbg(NEIGHBOR_CHANNEL, "NEIGHBOR EVENT\n");
+      call Neighbor_Discovery.start(source);
+   }
 
    event void CommandHandler.printRouteTable(){}
 

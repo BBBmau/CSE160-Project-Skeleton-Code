@@ -1,10 +1,16 @@
 
 
 
-module FloodingC{
-    uses interface SimpleSend as Sender;
-}
+// configuration FloodingC{
+//     provides interface Flooding;
+//     uses interface Packet;
+// }
 
-implementation{
+// implementation{
+//     components FloodingP;
+//     Flooding = FloodingP;
 
-}
+//     Packet.sendPackage()
+
+//     components new  
+// }

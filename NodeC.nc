@@ -16,6 +16,10 @@ configuration NodeC{
 implementation {
     components MainC;
     components Node;
+
+    // Project 1
+    //components Flooding;
+
     components new AMReceiverC(AM_PACK) as GeneralReceive;
 
     Node -> MainC.Boot;
@@ -30,4 +34,10 @@ implementation {
 
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
+
+    // components FloodingC;
+    // Node.Flooding -> FloodingC
+
+    components Neighbor_DiscoveryC;
+    Node.Neighbor_Discovery -> Neighbor_DiscoveryC;
 }

@@ -1,5 +1,7 @@
 from TestSim import TestSim
 
+#Hello!
+
 def main():
     # Get simulation ready to run.
     s = TestSim();
