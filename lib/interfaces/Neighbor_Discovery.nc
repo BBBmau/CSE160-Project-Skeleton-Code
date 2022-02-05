@@ -1,3 +1,3 @@
 interface Neighbor_Discovery{
-    command void start(uint16_t source);
+    command void run();
 }
