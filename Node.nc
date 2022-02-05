@@ -71,7 +71,7 @@ implementation{
 
    event void CommandHandler.printNeighbors(uint16_t source){
       dbg(NEIGHBOR_CHANNEL, "NEIGHBOR EVENT\n");
-      call Neighbor_Discovery.start(source);
+      call Neighbor_Discovery.run();
    }
 
    event void CommandHandler.printRouteTable(){}
