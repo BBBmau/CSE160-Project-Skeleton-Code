@@ -1,5 +1,7 @@
 
 #include "../../includes/am_types.h"
+//#include "../../includes/neighbor.h"
+
 
 configuration Neighbor_DiscoveryC{
     provides interface Neighbor_Discovery;
@@ -8,12 +10,12 @@ configuration Neighbor_DiscoveryC{
 implementation{
     components Neighbor_DiscoveryP;
 
-    //Neighbor_Discovery = Neighbor_DiscoveryP;
+    Neighbor_Discovery = Neighbor_DiscoveryP;
 
     components new TimerMilliC() as periodicTimer;
     components new ListC(neighbor, 20);
     
-    Neighbor_DiscoveryP -> ListC;
+    Neighbor_DiscoveryP.Neighborhood -> ListC;
     Neighbor_DiscoveryP.periodicTimer -> periodicTimer;
 
     //Neighbor_DiscoveryP.run -> Neighbor_Discovery.run;
@@ -27,10 +29,10 @@ implementation{
 
     Neighbor_DiscoveryP.Receiver -> GeneralReceive;
 
-    // From MainC
-    components new AMSenderC(channel);
-    Neighbor_DiscoveryP.Packet -> AMSenderC;
-    Neighbor_DiscoveryP.AMPacket -> AMSenderC;
+    // channel datatype from SimpleSenderC
+    // components new AMSenderC(channel);
+    // Neighbor_DiscoveryP.Packet -> AMSenderC;
+    // Neighbor_DiscoveryP.AMPacket -> AMSenderC;
 
 
 }

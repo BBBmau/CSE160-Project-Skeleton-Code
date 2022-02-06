@@ -4,6 +4,7 @@
 #include "../../includes/CommandMsg.h"
 #include "../../includes/sendInfo.h"
 #include "../../includes/channels.h"
+#include "../../includes/neighbor.h"
 
 module Neighbor_DiscoveryP{
     provides interface Neighbor_Discovery;
@@ -75,17 +76,20 @@ implementation{
                     return msg;
                 }
 
-                dbg(NEIGHBOR_CHANNEL, "No Acknowledgement received");
+                dbg(NEIGHBOR_CHANNEL, "No Acknowledgement received\n");
                 return msg;
             }
 
-            dbg(NEIGHBOR_CHANNEL, "Reply was Received");
+            dbg(NEIGHBOR_CHANNEL, "Reply was Received\n");
             return msg;
         }
-        dbg(NEIGHBOR_CHANNEL, "No Actual Packet");
+        dbg(NEIGHBOR_CHANNEL, "No Actual Packet\n");
         return msg;
     }    
 
+    void updateNeighbors(){
+        dbg(NEIGHBOR_CHANNEL, "UPDATING NEIGHBORS\n");
+    }
 
     void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
       Package->src = src;

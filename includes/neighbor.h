@@ -4,4 +4,6 @@
 typedef nx_struct neighbor{
     nx_uint16_t home; // Node that we're focused on to find neighbors for
     // Just one variable for now to have NeighborDiscovery working
-}
+}neighbor;
+
+#endif
