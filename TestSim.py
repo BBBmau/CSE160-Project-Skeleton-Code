@@ -136,16 +136,16 @@ def main():
     s.loadNoise("no_noise.txt");
     s.bootAll();
     s.addChannel(s.COMMAND_CHANNEL);
-    s.addChannel(s.GENERAL_CHANNEL);
+    #s.addChannel(s.GENERAL_CHANNEL);
 
     s.addChannel(s.NEIGHBOR_CHANNEL)
 
     s.runTime(10)
-    #s.ping(1, 2, "Hello, World")
-    s.neighborDMP(10)
+    #s.ping(2, 3, "Hello, World")
+    s.neighborDMP(2)
     s.runTime(10);
-    s.ping(10, 11, "Hi!");
-    s.runTime(20);
+    #s.ping(4, 5, "Hi!");
+    s.runTime(10);
 
     
 

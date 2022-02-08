@@ -69,9 +69,12 @@ implementation{
       call Sender.send(sendPackage, destination);
    }
 
-   event void CommandHandler.printNeighbors(uint16_t source){
+   event void CommandHandler.printNeighbors(uint16_t home){
       dbg(NEIGHBOR_CHANNEL, "NEIGHBOR EVENT\n");
+      
       call Neighbor_Discovery.run();
+      
+      //call Neighbor_Discovery.printNeighbors();
    }
 
    event void CommandHandler.printRouteTable(){}

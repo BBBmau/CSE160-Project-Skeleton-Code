@@ -22,7 +22,7 @@ implementation{
     
     
     components new SimpleSendC(AM_PACK);
-    Neighbor_DiscoveryP.Sender -> SimpleSendC;
+    Neighbor_DiscoveryP.Send -> SimpleSendC;
 
     
     components new AMReceiverC(AM_PACK) as GeneralReceive;
