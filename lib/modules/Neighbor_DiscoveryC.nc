@@ -13,13 +13,7 @@ implementation{
     Neighbor_Discovery = Neighbor_DiscoveryP;
 
     components new TimerMilliC() as periodicTimer;
-    components new ListC(neighbor, 20);
-    
-    Neighbor_DiscoveryP.Neighborhood -> ListC;
-    Neighbor_DiscoveryP.periodicTimer -> periodicTimer;
-
-    //Neighbor_DiscoveryP.run -> Neighbor_Discovery.run;
-    
+    Neighbor_DiscoveryP.periodicTimer -> periodicTimer;    
     
     components new SimpleSendC(AM_PACK);
     Neighbor_DiscoveryP.Send -> SimpleSendC;
