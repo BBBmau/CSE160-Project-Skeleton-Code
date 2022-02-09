@@ -17,16 +17,12 @@ implementation{
     
     components new SimpleSendC(AM_PACK);
     Neighbor_DiscoveryP.Send -> SimpleSendC;
-
     
     components new AMReceiverC(AM_PACK) as GeneralReceive;
 
     Neighbor_DiscoveryP.Receiver -> GeneralReceive;
 
-    // channel datatype from SimpleSenderC
-    // components new AMSenderC(channel);
-    // Neighbor_DiscoveryP.Packet -> AMSenderC;
-    // Neighbor_DiscoveryP.AMPacket -> AMSenderC;
-
+    components RandomC as Random;
+    Neighbor_DiscoveryP.Random -> Random;
 
 }

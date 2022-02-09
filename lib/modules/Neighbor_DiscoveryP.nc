@@ -17,6 +17,8 @@ module Neighbor_DiscoveryP{
 	    interface Receive as Receiver;
 
         interface Timer<TMilli> as periodicTimer;
+
+        interface Random;
     }
 
 }
@@ -42,10 +44,11 @@ implementation{
     // command that gets called by the commandHandler
     command void Neighbor_Discovery.run(){
         dbg(NEIGHBOR_CHANNEL, "Finding Neighbors for Node: %hhu\n", TOS_NODE_ID);
-        call periodicTimer.startPeriodic(10000); // We'll want to constantly be sending packets to neighbors
+        call periodicTimer.startPeriodic(9000 + (call Random.rand16() % 10)); // We'll want to constantly be sending packets to neighbors
 	}
 
     event void periodicTimer.fired(){
+        SEQ_NUM++;
         makePack(&sendPackage, TOS_NODE_ID, AM_BROADCAST_ADDR, 1, SEQ_NUM , PROTOCOL_PING, temp , PACKET_MAX_PAYLOAD_SIZE);
         call Send.send(sendPackage, sendPackage.dest); // Broadcasting to all nodes waiting to receive a message
 
@@ -79,13 +82,16 @@ implementation{
     void addNeighbor(neighbor newNeighbor){
         // checking for duplicates by using sequence
         uint8_t i;
+
+        
         for(i = 0; i < neighborCount; i++){
-            if(Neighborhood[i].seq == newNeighbor.seq){ // Duplicate! We can restart the TTL!
+            if(Neighborhood[i].seq == newNeighbor.seq || Neighborhood[i].dest == newNeighbor.dest){ // Duplicate! We can restart the TTL!
                 Neighborhood[i].TTL = MAX_TTL;
                 return;
             }
+                
         }
-
+        dbg(NEIGHBOR_CHANNEL, "ADDING NEIGHBOR: %hhu\n", newNeighbor.dest);
         // If not duplicate, add to the Neighborhood list
         Neighborhood[neighborCount] = newNeighbor;
         neighborCount++;
@@ -100,18 +106,21 @@ implementation{
         
         // Since we are only wanting to check for replies from neighbors
         // we check for the dest of the payload to be AM_BROADCAST_ADDR
+        // dbg(NEIGHBOR_CHANNEL, "SENT FROM NODE %hhu, TO %hhu\n", myMsg->src, TOS_NODE_ID);
+        // dbg(NEIGHBOR_CHANNEL, "Next Destination is %hhu\n", myMsg->dest);
         
+
         if (myMsg->dest == AM_BROADCAST_ADDR){ // we are broadcasting to all nearby nodes
                                                // we therefore want to instantly send a reply back!
-            dbg(NEIGHBOR_CHANNEL, "NeighborReciever Called \n");
+            //dbg(NEIGHBOR_CHANNEL, "NeighborReciever Called \n");
             myMsg->dest = myMsg->src;
             myMsg->src = TOS_NODE_ID;
             myMsg->protocol = PROTOCOL_PINGREPLY;
-
+            
             call Send.send(*myMsg, myMsg->dest); // Sending a reply back!
 
         }else if(myMsg->dest == TOS_NODE_ID){ // This tells us that Home Node is going to the receiving node
-            makeNeighbor(&neighborHolder, myMsg->src, myMsg->dest, SEQ_NUM, 13);
+            makeNeighbor(&neighborHolder, myMsg->dest, myMsg->src, SEQ_NUM, 13);
             addNeighbor(neighborHolder);            // which means it's a neighbor!
         }
 
@@ -122,7 +131,7 @@ implementation{
         uint16_t i;
         dbg(NEIGHBOR_CHANNEL, "Printing Neighbors for Node %hhu: \n", TOS_NODE_ID);
         for(i = 0; i < neighborCount; i++){
-            dbg(NEIGHBOR_CHANNEL, "Node %hhu, with a TTL of %hhu\n", Neighborhood[i].home, Neighborhood[i].TTL);
+            dbg(NEIGHBOR_CHANNEL, "Node %hhu, with a TTL of %hhu\n", Neighborhood[i].dest, Neighborhood[i].TTL);
         }
     }
 
