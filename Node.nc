@@ -25,6 +25,9 @@ module Node{
    // uses interface Flooding;
    uses interface Neighbor_Discovery;
 
+   // Project 2
+   uses interface Routing;
+
    uses interface CommandHandler;
 }
 
@@ -67,6 +70,7 @@ implementation{
       dbg(GENERAL_CHANNEL, "PING EVENT \n");
       makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
       call Sender.send(sendPackage, destination);
+      //call Flooding.send(sendPackage, 5);
    }
 
    event void CommandHandler.printNeighbors(uint16_t home){
@@ -77,7 +81,10 @@ implementation{
       //call Neighbor_Discovery.printNeighbors();
    }
 
-   event void CommandHandler.printRouteTable(){}
+   event void CommandHandler.printRouteTable(){
+      dbg(ROUTING_CHANNEL, "ROUTING EVENT\n");
+      call Routing.run();
+   }
 
    event void CommandHandler.printLinkState(){}
 

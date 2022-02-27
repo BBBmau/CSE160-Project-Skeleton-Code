@@ -36,7 +36,10 @@ implementation {
     Node.CommandHandler -> CommandHandlerC;
 
     // components FloodingC;
-    // Node.Flooding -> FloodingC
+    // Node.Flooding -> FloodingC;
+
+    components RoutingC;
+    Node.Routing -> RoutingC;
 
     components Neighbor_DiscoveryC;
     Node.Neighbor_Discovery -> Neighbor_DiscoveryC;
