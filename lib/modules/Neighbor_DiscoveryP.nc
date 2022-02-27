@@ -4,7 +4,7 @@
 #include "../../includes/CommandMsg.h"
 #include "../../includes/sendInfo.h"
 #include "../../includes/channels.h"
-#include "../../includes/neighbor.h"
+#include "../includes/neighbor.h"
 #define MAX_TTL 13
 
 module Neighbor_DiscoveryP{
@@ -53,6 +53,14 @@ implementation{
         call Send.send(sendPackage, sendPackage.dest); // Broadcasting to all nodes waiting to receive a message
 
         updateNeighborhood();
+    }
+
+    command uint16_t Neighbor_Discovery.NeighborhoodSize(){
+        return neighborCount;
+    }
+
+    command neighbor* Neighbor_Discovery.NeighborhoodList(){
+        return Neighborhood;
     }
 
     void updateNeighborhood(){
@@ -108,7 +116,7 @@ implementation{
         // we check for the dest of the payload to be AM_BROADCAST_ADDR
         // dbg(NEIGHBOR_CHANNEL, "SENT FROM NODE %hhu, TO %hhu\n", myMsg->src, TOS_NODE_ID);
         // dbg(NEIGHBOR_CHANNEL, "Next Destination is %hhu\n", myMsg->dest);
-        
+        dbg(NEIGHBOR_CHANNEL, "DESTINATION OF PACKET: %hhu\n", myMsg->dest);
 
         if (myMsg->dest == AM_BROADCAST_ADDR){ // we are broadcasting to all nearby nodes
                                                // we therefore want to instantly send a reply back!
