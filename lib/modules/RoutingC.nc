@@ -24,8 +24,8 @@ implementation{
     components Neighbor_DiscoveryC as Discovery;
     RoutingP.Discovery -> Discovery;
 
-    // components new HashmapC(uint16_t, 20) as DV;
-    // RoutingP.DV -> DV;
+    components new HashmapC(DVnode, 20) as DV;
+    RoutingP.DV -> DV;
 
     // // Used for Routing Table, where Keys are Destinations and 
     // // Hop Cost contains both the Hop and Cost in a data type (HopCost)
