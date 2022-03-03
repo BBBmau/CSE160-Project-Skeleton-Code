@@ -16,17 +16,24 @@ module FloodingP
 	//Uses the Receive interface to determine if received packet is meant for me.
 	uses interface Receive as Receiver;
 	
+	uses interface Timer<TMilli> as Timer;
 
 	uses interface Neighbor_Discovery;
 }
 
 implementation
 {
+	pack msgTravel;
+	uint16_t finalDest;
+
 	pack sendPackage;
 	uint16_t SEQ_NUM = 0;
 	bool busy = FALSE;
 	bool seenPacket = FALSE;
-	
+	neighbor *neighborList;
+	uint16_t i;
+	uint16_t N;
+
 	// struct Link{
 	// 	uint8_t src;
 	// 	uint8_t dest;
@@ -34,6 +41,7 @@ implementation
 
 	//Prototypes
 	void makePack(pack* Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t seq, uint16_t protocol, uint8_t * payload, uint8_t length);
+	void FLOOD();
 	// bool isInLinkList(pack packet);
 	// void addToLinkList(pack packet);
 
@@ -41,30 +49,42 @@ implementation
 
 	//Broadcast packet
 	command error_t Flooding.send(pack msg, uint16_t dest){
+		// We want to start NeighborDiscovery Right Away
+		msgTravel = msg;
+		finalDest = dest;
+
+		call Neighbor_Discovery.run();
+		call Timer.startOneShot(10000);
+	}
+
+
+	event void Timer.fired(){
+		FLOOD();
+	}
+
+	void FLOOD(){
 		//We want Flooding to watch for 3 things:Src addr,increasing seqnum, and TTL field
-		msg.src = TOS_NODE_ID;
-		msg.dest = dest;
-		msg.seq = SEQ_NUM++;
-		msg.TTL = MAX_TTL;
+		msgTravel.src = TOS_NODE_ID;
+		msgTravel.dest = finalDest;
+		msgTravel.seq = SEQ_NUM++;
+		msgTravel.TTL = MAX_TTL;
 		//Attempt to send the packet
 		dbg(FLOODING_CHANNEL, "Sending from Flooding\n");
+		neighborList = call Neighbor_Discovery.NeighborhoodList();
+		N = call Neighbor_Discovery.NeighborhoodSize();
+		dbg(FLOODING_CHANNEL, "NeighborList Size: %d\n", N);
 
-		if (call Sender.send(msg, AM_BROADCAST_ADDR) == SUCCESS)
-		{
-			return SUCCESS;
+		for(i = 0; i < N; i++){
+			call Sender.send(msgTravel, neighborList[i].dest);
 		}
-		
-		return FAIL;
 	}
 
 	//Event signaled when a node recieves a packet
 	event message_t *Receiver.receive(message_t * msg, void *payload, uint8_t len){
-		call Neighbor_Discovery.run();
-
 		dbg(FLOODING_CHANNEL, "Packet Received in Flooding\n");
 		if (len == sizeof(pack)){
 			pack *contents = (pack *)payload;
-
+			//dbg(FLOODING_CHANNEL, "Checking Packet\n");
 			//If I am the original sender or have seen the packet before, drop it
 			// We use the Link Layer to make sure that we only send ONE PACKET at each link!
 			if ((contents->src == TOS_NODE_ID) || seenPacket){
@@ -85,7 +105,7 @@ implementation
 						uint16_t updateSrc = contents -> src;
 						contents -> src = contents -> dest;
 						contents -> dest = updateSrc;
-						dbg(FLOODING_CHANNEL, "Reached Node %hhu from Source Node %hhu!", TOS_NODE_ID, contents->src);
+						dbg(FLOODING_CHANNEL, "Reached Node %hhu from Source Node %hhu!\n", TOS_NODE_ID, contents->dest);
 						contents -> protocol = PROTOCOL_PINGREPLY;
 
 						//call Sender.send(contents, contents->dest); // Sending the Reply back!
@@ -97,22 +117,22 @@ implementation
 				else{ 
 					// Continue to Flood
 					contents->TTL--;
-					if(contents->TTL <= 1){
+					// if(contents->TTL <= 1){
 						
-						return msg;
-					}
-						
-
-					// We use Neighbor Discovery to Acquire List of Neighbors
-					// neighborList = call Neighbor_Discovery.NeighborhoodList();
-					
-					// uint8_t i;
-					// for(i = 0; i < call Neighbor_Discovery.NeighborhoodSize(); i++){
-					// 	call Sender.send(msg, neighborList[i].dest);
+					// 	return msg;
 					// }
+					//dbg(FLOODING_CHANNEL, "seenPacket\n");
+					seenPacket = TRUE;
+					// We use Neighbor Discovery to Acquire List of Neighbors
+					neighborList = call Neighbor_Discovery.NeighborhoodList();
+					N = call Neighbor_Discovery.NeighborhoodSize();
+
+					//dbg(FLOODING_CHANNEL, "NeighborList Size: %d\n", N);
+					
+						
+						call Flooding.send(*contents, contents->dest);
 				}
 			}
-
 			return msg;
 		}
 

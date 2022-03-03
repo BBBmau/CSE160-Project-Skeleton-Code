@@ -15,6 +15,9 @@ implementation{
     components new AMReceiverC(AM_FLOODING) as Receiver;
     FloodingP.Receiver -> Receiver;
 
+    components new TimerMilliC() as Timer;
+    FloodingP.Timer -> Timer;   
+
     // components new ListC(pack, 20) as neighborList;
     // FloodingP.neighborList -> neighborList;
 
