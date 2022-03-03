@@ -1,16 +1,17 @@
 #ifndef DV_H
 #define DV_H
 
-typedef nx_struct DVnode{
-    nx_uint16_t dest;
-    nx_uint16_t hop; // sequence number to identify unique neighbors
-    nx_uint16_t count; // Time to Live for a Node
-}DVnode;
+typedef struct Route{
+    uint16_t dest;
+    uint16_t hop;
+    uint16_t cost;
+    uint16_t src;
+}Route;
 
-typedef nx_struct DVnew{
-    nx_uint16_t dest;
-    nx_uint16_t hop; // sequence number to identify unique neighbors
-    nx_uint16_t count;
-}
+// typedef struct Entry{
+//     uint16_t dest;
+//     uint16_t hop;
+//     uint16_t cost;
+// }DVnew;
 
 #endif

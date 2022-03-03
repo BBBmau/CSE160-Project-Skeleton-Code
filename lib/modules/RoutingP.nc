@@ -7,13 +7,16 @@ module RoutingP{
         interface SimpleSend as Sender;
         interface Receive as ReceiveRoute;
 
-        interface Timer<TMilli> as HomeTimer;
-        interface Timer<TMilli> as DestTimer;
+        interface Timer<TMilli> as PrintTimer;
+
+        interface Timer<TMilli> as advertiseTimer;
+
+        interface Timer<TMilli> as NeighborTimer;
 
         interface Neighbor_Discovery as Discovery;
 
-        // Distance-Vector containing DVnodes struct
-        interface Hashmap<DVnode> as DV;
+        // Distance-Vector containing Entry struct
+        interface List<Route> as DV;
 
         // Routing Table (keys == Node #) and (Values == (Hop , Cost))
         //interface Hashmap<HopCost> as Table;
@@ -22,98 +25,162 @@ module RoutingP{
 }
 
 implementation{
-    pack sendPackage;
-    uint16_t SEQ_NUM = 0;
+    pack sendRoutePackage;
     uint16_t revision = 0;
     uint16_t i = 0;
     uint16_t N;
+    uint16_t DVsize;
+    uint16_t SEQ_NUM = 0;
+    bool neighborsRecorded = FALSE;
 
-    uint32_t *DVkeys;
-    DVnode DVpack;
-    DVnode ROUTEpack;
 
-    uint8_t *temp = &SEQ_NUM;
+    Route neighborRoute;
+    Route RouteSend;
+    Route * incomingRoute;
+    neighbor * neighborhood;
 
-    neighbor *Neighborhood;
-    void storeNeighbors();
-    void makePack(pack * Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t seq, uint16_t protocol, uint8_t * payload, uint8_t length);
-    void makeDVpack(DVnode * packet, uint16_t dest, uint16_t hop, uint8_t count);
+    // uint8_t *temp = &SEQ_NUM;
+
+    void makePack(pack * Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint8_t * payload, uint8_t length);
+    void makeRoute(Route * packet, uint16_t dest, uint16_t hop, uint8_t cost, uint16_t src);
+    void mergeRoute(pack *incomingPacket, Route *newRoute);
+    void printRoutingTable();
+    void InitalizeRoutingTable();
 
     command void Routing.run(){
         call Discovery.run();
-        call HomeTimer.startPeriodic(3000);
-        revision++;
+        neighborsRecorded = TRUE;
+        call NeighborTimer.startOneShot(50000);
+        call PrintTimer.startOneShot(1000000);
+    }
+
+    event void NeighborTimer.fired(){
+        InitalizeRoutingTable();
+    }
+
+    event void PrintTimer.fired(){
+        printRoutingTable();
+    }
+
+    void printRoutingTable(){
+
+        uint16_t tableSize = call DV.size(); //pointerArrayCounter(neighbors);
+        dbg(ROUTING_CHANNEL, "Routing Table\n");
+        dbg(ROUTING_CHANNEL, "Dest  Hop  Cost\n");
+        for (i = 0; i < tableSize; i++){
+            Route checkRoute = call DV.get(i);
+            dbg(ROUTING_CHANNEL, "%d     %d    %d\n", checkRoute.dest, checkRoute.hop, checkRoute.cost);
+        }
+    }
+
+    void InitalizeRoutingTable(){
+        neighborhood = call Discovery.NeighborhoodList();
+        N = call Discovery.NeighborhoodSize(); //pointerArrayCounter(neighbors);
         
-        dbg(ROUTING_CHANNEL, "Packet has %d %d %d\n", DVpack.dest, DVpack.hop, DVpack.count);
-
-        dbg(ROUTING_CHANNEL, "STARTED FROM NODE %hhu\n", TOS_NODE_ID);
-        makePack(&sendPackage, TOS_NODE_ID, AM_BROADCAST_ADDR, 1, SEQ_NUM , PROTOCOL_DV,(uint8_t*) &DVpack, PACKET_MAX_PAYLOAD_SIZE);
-        call Sender.send(sendPackage, AM_BROADCAST_ADDR);
-    }
-
-    // storing the neighbors of TOS_NODE_ID into Hashmap DV
-    void storeNeighbors(){
-        Neighborhood = call Discovery.NeighborhoodList();
-        i = 0;
-        N = call Discovery.NeighborhoodSize();
-        for(i = 0; i < N; i++){
-            makeDVpack(&DVpack, (Neighborhood + i)->dest, (Neighborhood + i)->dest, 1);
-            dbg(ROUTING_CHANNEL, "KEY: %d\n", (Neighborhood + i)->dest);
-            call DV.insert((Neighborhood + i)->dest, DVpack); // Key is the Dest with value being struct of dest, hop, and cost
+        //neighbor node = {TOS_NODE_ID, 0};
+        makeRoute(&neighborRoute, 0, 0, 0, 0);
+        //dbg(ROUTING_CHANNEL, "Starting Routing Table\n");
+        for (i = 0; i < N; i++){
+            //use a Temporary route to insert neighbor info into routing table
+            neighborRoute.dest = (neighborhood + i)->dest;
+            neighborRoute.hop = (neighborhood + i)->dest;
+            neighborRoute.cost = 1; /* distance metric */ //temprarily for NumOfHops
+            //dbg(ROUTING_CHANNEL, "%d %d %d\n", neighborRoute.dest, neighborRoute.hop, neighborRoute.cost);
+            call DV.pushback(neighborRoute);
         }
-
-        //dbg(ROUTING_CHANNEL, "DV Size is: %d\n", N);
+        //dbg(ROUTING_CHANNEL, "Routing Table Size: %d\n", call DV.size());
+        neighborsRecorded = TRUE;
+        call advertiseTimer.startOneShot(1000); //30 Seconds
     }
 
-    event void DestTimer.fired(){
-        storeNeighbors();
-    }
-
-    event void HomeTimer.fired(){
-        // Find the Neighbors and add into the Distant Vector, this should be happening periodic
-        storeNeighbors();
-        dbg(ROUTING_CHANNEL, "Routing Table:\n");
-        dbg(ROUTING_CHANNEL, "Dest  Hop  Count\n");
-
-        // NodeList = call DV.getKeys();
-        N = call DV.size(); // Size of the Distant-Vector
-        DVkeys = call DV.getKeys();
-        for(i = 0; i < N; i++){
-            ROUTEpack = call DV.get(DVkeys[i]);
-            dbg(ROUTING_CHANNEL, "%d     %d    %d\n", ROUTEpack.dest, ROUTEpack.hop, ROUTEpack.count);
+    // Timer used to send out the different Node Packs to neighbors
+    event void advertiseTimer.fired(){
+        DVsize = call DV.size();
+        //dbg(ROUTING_CHANNEL, "DV Size: %d\n", DVsize);
+        //dbg(ROUTING_CHANNEL, "IN advertiseTimer\n");
+        for(i = 0; i < DVsize; i++){
+            RouteSend = call DV.get(i);
+            //dbg(ROUTING_CHANNEL, "Route being sent has Dest: %d Hop: %d Cost: %d\n", RouteSend.dest, RouteSend.hop, RouteSend.cost);
+            makePack(&sendRoutePackage, TOS_NODE_ID, RouteSend.dest, 1 , 5, (uint16_t*)&RouteSend , PACKET_MAX_PAYLOAD_SIZE);
+            call Sender.send(sendRoutePackage, AM_BROADCAST_ADDR);
         }
     }
 
+
+    void mergeRoute(pack *incomingPack, Route *newRoute){
+        uint16_t NumRoutes = call DV.size();
+        //dbg(ROUTING_CHANNEL, "newRoute; Dest: %d\n", newRoute->dest);
+        for (i = 0; i < NumRoutes; i++){
+            Route checkRoute = call DV.get(i);
+            if(newRoute->dest == checkRoute.dest){
+                if(newRoute->cost + 1 < checkRoute.cost){
+                    // Better Route Found
+                    // (call DV.get(i)).cost = newRoute->cost + 1;
+                    // (call DV.get(i)).hop = incomingPack->src;
+                    break;
+                }
+                else{
+                    // Route adds no value to the list
+                    return;
+                }
+            }
+        }
+
+        if(i == NumRoutes && newRoute->dest != TOS_NODE_ID){ // Completely New Route
+            //dbg(ROUTING_CHANNEL, "NEW ROUTE ADDED. DEST: %d\n", newRoute->dest);
+            newRoute->hop = incomingPack->src;
+            newRoute->cost++;
+            call DV.pushback(*newRoute);
+            // (call DV.get(i)).cost++; causes an error
+
+        }
+    }
 
     event message_t *ReceiveRoute.receive(message_t * msg, void *payload, uint8_t len){
-        DVnode* packet = (DVnode*) payload;
-
-       dbg(ROUTING_CHANNEL, "Packet has %d %d %d\n", packet->dest, packet->hop, packet->count);
-
-
-        if (revision == 0){ // First Revision will be to store the neighbors of TOS_NODE_ID
-            call Discovery.run();
-            call DestTimer.startPeriodic(5000);
-        }else{
+        if(neighborsRecorded == TRUE){
+            // dbg(ROUTING_CHANNEL, "Neighbors have been recorded with a size of %d\n", DVsize);
         }
+        if(neighborsRecorded == FALSE){
+            call Discovery.run();
+            neighborsRecorded = TRUE;
+            //dbg(ROUTING_CHANNEL, "Discovering neighbors for %d\n", TOS_NODE_ID);
+            call NeighborTimer.startOneShot(10000);
+        }
+        else{
+            pack* incomingPacket = (pack*) payload;
+            incomingRoute = incomingPacket->payload;
 
-        revision++;
+            // In order to insure we're working with packets that have to do
+            // with Routing we check if the packet has PROTOCOL_ROUTE (5)
+            if(incomingPacket->protocol == 5 && incomingRoute->dest < 100){
+                //dbg(ROUTING_CHANNEL, "Packet Info Dest: %d Src: %d\n", incomingPacket->dest, incomingPacket->src);
+                //dbg(ROUTING_CHANNEL, "Packet has %d %d %d\n", incomingRoute->dest, incomingRoute->hop, incomingRoute->cost);
+                mergeRoute(incomingPacket, incomingRoute);
+                call advertiseTimer.startOneShot(100000);
+            }
+        }
 
         return msg;
     }
 
 
-    void makeDVpack(DVnode * packet, uint16_t dest, uint16_t hop, uint8_t count){
+    void makeRoute(Route * packet, uint16_t dest, uint16_t hop, uint8_t cost, uint16_t src){
         packet->dest = dest;
         packet->hop = hop;
-        packet->count = count;
+        packet->cost = cost;
+        packet->src = src;
     }
 
-    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
+    // void makeEntry(DVnew * node, uint16_t dest, uint16_t hop, uint8_t cost){
+    //     node->dest = dest;
+    //     node->hop = hop;
+    //     node->cost = cost;
+    //     }
+
+    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint8_t* payload, uint8_t length){
       Package->src = src;
       Package->dest = dest;
       Package->TTL = TTL; // Time-To-Live, to limit lifespan of data so that it's removed after a certain period of time
-      Package->seq = seq;
       Package->protocol = protocol;
       memcpy(Package->payload, payload, length);
    }
