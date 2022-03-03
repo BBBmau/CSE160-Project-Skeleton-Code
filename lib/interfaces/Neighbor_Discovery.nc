@@ -5,6 +5,6 @@ interface Neighbor_Discovery{
     command void printNeighbors();
     // make functions to get neighborList
     command uint16_t NeighborhoodSize();
-
+    command void stop();
     command neighbor* NeighborhoodList();
 }

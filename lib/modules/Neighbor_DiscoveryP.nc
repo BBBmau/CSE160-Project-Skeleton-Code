@@ -31,6 +31,7 @@ implementation{
     uint8_t neighborCount = 0;
     neighbor neighborHolder;
     neighbor Neighborhood[20]; // Max Neighbors Possible (?)
+    uint16_t count = 0;
 
     // creating structs
     void makePack(pack * Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t seq, uint16_t protocol, uint8_t * payload, uint8_t length);
@@ -49,10 +50,18 @@ implementation{
 
     event void periodicTimer.fired(){
         SEQ_NUM++;
+        count++;
+        
+        if(count == 10){
+            call periodicTimer.stop();
+        }
         makePack(&sendPackage, TOS_NODE_ID, AM_BROADCAST_ADDR, 1, SEQ_NUM , PROTOCOL_PING, temp , PACKET_MAX_PAYLOAD_SIZE);
         call Send.send(sendPackage, sendPackage.dest); // Broadcasting to all nodes waiting to receive a message
 
         updateNeighborhood();
+
+        
+        
     }
 
     command uint16_t Neighbor_Discovery.NeighborhoodSize(){
@@ -108,10 +117,12 @@ implementation{
         call Neighbor_Discovery.printNeighbors();
     }
     
+    command void Neighbor_Discovery.stop(){
+        call periodicTimer.stop();
+    }
 
     event message_t *Receiver.receive(message_t * msg, void *payload, uint8_t len){
         pack* myMsg = (pack*) payload;
-        
         // Since we are only wanting to check for replies from neighbors
         // we check for the dest of the payload to be AM_BROADCAST_ADDR
         // dbg(NEIGHBOR_CHANNEL, "SENT FROM NODE %hhu, TO %hhu\n", myMsg->src, TOS_NODE_ID);
@@ -123,7 +134,7 @@ implementation{
             //dbg(NEIGHBOR_CHANNEL, "NeighborReciever Called \n");
             myMsg->dest = myMsg->src;
             myMsg->src = TOS_NODE_ID;
-            myMsg->protocol = PROTOCOL_PINGREPLY;
+            //myMsg->protocol = PROTOCOL_PINGREPLY;
             
             call Send.send(*myMsg, myMsg->dest); // Sending a reply back!
 
