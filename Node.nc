@@ -22,7 +22,7 @@ module Node{
    uses interface SimpleSend as Sender;
 
    // Project 1
-   // uses interface Flooding;
+   uses interface Flooding;
    uses interface Neighbor_Discovery;
 
    // Project 2
@@ -70,7 +70,7 @@ implementation{
       dbg(GENERAL_CHANNEL, "PING EVENT \n");
       makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
       call Sender.send(sendPackage, destination);
-      //call Flooding.send(sendPackage, 5);
+      call Flooding.send(sendPackage, destination);
    }
 
    event void CommandHandler.printNeighbors(uint16_t home){

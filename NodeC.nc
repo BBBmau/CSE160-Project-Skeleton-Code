@@ -18,7 +18,7 @@ implementation {
     components Node;
 
     // Project 1
-    //components Flooding;
+    // components Flooding;
 
     components new AMReceiverC(AM_PACK) as GeneralReceive;
 
@@ -35,8 +35,8 @@ implementation {
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
 
-    // components FloodingC;
-    // Node.Flooding -> FloodingC;
+    components FloodingC;
+    Node.Flooding -> FloodingC;
 
     components RoutingC;
     Node.Routing -> RoutingC;
