@@ -144,11 +144,12 @@ def main():
     s.runTime(5)
     #s.ping(2, 3, "Hello, World")
     #s.neighborDMP(9)
-    s.routeDMP(6);
-    s.runTime(700);
-    
-    #s.ping(4, 5, "Hi!");
-    #s.runTime(10);
+    #s.runTime(700)
+    #s.runTime(700);
+    s.routeDMP(4);
+    s.runTime(300)
+    s.ping(4,11, "Hi!");
+    s.runTime(50);
     
     
 

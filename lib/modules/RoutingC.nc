@@ -20,9 +20,13 @@ implementation{
 
     components new SimpleSendC(AM_PACK);
     RoutingP.Sender -> SimpleSendC;
-
     components new AMReceiverC(AM_PACK) as GeneralReceive;
     RoutingP.ReceiveRoute -> GeneralReceive;
+
+    RoutingP.ForwardReceive -> GeneralReceive;
+    
+    components new SimpleSendC(AM_PACK) as ForwardSend;
+    RoutingP.ForwardSend -> ForwardSend;
 
     components Neighbor_DiscoveryC as Discovery;
     RoutingP.Discovery -> Discovery;

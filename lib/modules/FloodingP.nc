@@ -81,8 +81,11 @@ implementation
 
 	//Event signaled when a node recieves a packet
 	event message_t *Receiver.receive(message_t * msg, void *payload, uint8_t len){
-		dbg(FLOODING_CHANNEL, "Packet Received in Flooding\n");
-		if (len == sizeof(pack)){
+		pack* myMsg = (pack*) payload;
+
+		if(myMsg->protocol == PROTOCOL_PINGREPLY){
+			dbg(FLOODING_CHANNEL, "Packet Received in Flooding\n");
+			if (len == sizeof(pack)){
 			pack *contents = (pack *)payload;
 			//dbg(FLOODING_CHANNEL, "Checking Packet\n");
 			//If I am the original sender or have seen the packet before, drop it
@@ -134,6 +137,7 @@ implementation
 				}
 			}
 			return msg;
+			}
 		}
 
 	}

@@ -142,7 +142,7 @@ implementation{
             makeNeighbor(&neighborHolder, myMsg->dest, myMsg->src, SEQ_NUM, 13);
             addNeighbor(neighborHolder);            // which means it's a neighbor!
         }
-
+        
         return msg;
     }    
 
