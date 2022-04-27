@@ -1,4 +1,4 @@
-#include "../../packet.h"
+#include "../../includes/packet.h"
 #include "../../includes/socket.h"
 
 /**
@@ -16,6 +16,7 @@
  */
 
 interface Transport{
+   command error_t connectDone(socket_t fd);
    /**
     * Get a socket if there is one available.
     * @Side Client/Server
@@ -25,7 +26,7 @@ interface Transport{
     *    a socket then return a NULL socket_t.
     */
    command socket_t socket();
-
+   
    /**
     * Bind a socket with an address.
     * @param

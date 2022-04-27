@@ -13,23 +13,25 @@ class TestSim:
     CMD_PING = 0
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP=3
+    CMD_TEST_CLIENT=4
+    CMD_TEST_SERVER=5
 
     # CHANNELS - see includes/channels.h
-    COMMAND_CHANNEL="command";
-    GENERAL_CHANNEL="general";
+    COMMAND_CHANNEL="command"
+    GENERAL_CHANNEL="general"
 
     # Project 1
-    NEIGHBOR_CHANNEL="neighbor";
-    FLOODING_CHANNEL="flooding";
+    NEIGHBOR_CHANNEL="neighbor"
+    FLOODING_CHANNEL="flooding"
 
     # Project 2
-    ROUTING_CHANNEL="routing";
+    ROUTING_CHANNEL="routing"
 
     # Project 3
-    TRANSPORT_CHANNEL="transport";
+    TRANSPORT_CHANNEL="transport"
 
     # Personal Debuggin Channels for some of the additional models implemented.
-    HASHMAP_CHANNEL="hashmap";
+    HASHMAP_CHANNEL="hashmap"
 
     # Initialize Vars
     numMote=0
@@ -125,6 +127,16 @@ class TestSim:
     def routeDMP(self, destination):
         self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command");
 
+    # Project 3: TCP
+    
+    def testServer(self, address, port):
+        self.sendCMD(self.CMD_TEST_SERVER, address,"{0}{1}".format(chr(address),chr(port)))
+
+    def testClient(self, dest, srcPort, destPort, transfer):
+        self.sendCMD(self.CMD_TEST_CLIENT, dest, "{0}{1}{2}".format(chr(srcPort),chr(destPort), chr(transfer)))
+
+    ##############################################################################
+
     def addChannel(self, channelName, out=sys.stdout):
         print 'Adding Channel', channelName;
         self.t.addChannel(channelName, out);
@@ -140,15 +152,16 @@ def main():
     #s.addChannel(s.FLOODING_CHANNEL)
     #s.addChannel(s.NEIGHBOR_CHANNEL)
     s.addChannel(s.ROUTING_CHANNEL)
+    #s.addChannel(s.TRANSPORT_CHANNEL)
     
     s.runTime(5)
     #s.ping(2, 3, "Hello, World")
     #s.neighborDMP(9)
     #s.runTime(700)
     #s.runTime(700);
-    s.routeDMP(4);
-    s.runTime(300)
-    s.ping(4,11, "Hi!");
+    s.routeDMP(6);
+    s.runTime(600)
+    #s.ping(6,2, "Hi!");
     s.runTime(50);
     
     

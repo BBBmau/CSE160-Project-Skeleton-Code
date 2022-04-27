@@ -34,7 +34,7 @@ typedef uint8_t socket_t;
 typedef struct socket_store_t{
     uint8_t flag;
     enum socket_state state;
-    socket_port_t src;
+    socket_port_t srcPort;
     socket_addr_t dest;
 
     // This is the sender portion.
@@ -52,5 +52,19 @@ typedef struct socket_store_t{
     uint16_t RTT;
     uint8_t effectiveWindow;
 }socket_store_t;
+
+
+typedef nx_struct TCPpack{
+
+	// TCP Header Information
+    
+	nx_uint8_t srcPort;
+    nx_uint8_t destPort;
+	nx_uint8_t ACKNUM;
+    nx_uint8_t flag;  // 0 data, 2 SYN, 4 ACK, 6 FIN,
+    nx_uint16_t advertisedWindow;
+	nx_uint8_t payload[6];
+
+}TCPpack;
 
 #endif

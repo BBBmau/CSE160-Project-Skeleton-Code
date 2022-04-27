@@ -23,6 +23,13 @@ typedef nx_struct pack{
 	nx_uint8_t TTL;		//Time to Live
 	nx_uint8_t protocol;
 	nx_uint8_t payload[PACKET_MAX_PAYLOAD_SIZE];
+	
+	// // TCP Header Information
+	// nx_uint16_t srcPort;
+    // nx_uint16_t destPort;
+	// nx_uint16_t ACKNUM;
+    // nx_uint16_t flag;  // 0 data, 2 SYN, 4 ACK, 6 FIN,
+    // nx_uint16_t advertisedWindow;
 }pack;
 
 /*

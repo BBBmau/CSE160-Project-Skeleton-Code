@@ -41,6 +41,9 @@ implementation {
     components RoutingC;
     Node.Routing -> RoutingC;
 
+    components TransportC;
+    Node.Transport -> TransportC;
+
     components Neighbor_DiscoveryC;
     Node.Neighbor_Discovery -> Neighbor_DiscoveryC;
 }

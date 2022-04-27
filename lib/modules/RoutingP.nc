@@ -1,5 +1,6 @@
 #include "../includes/neighbor.h"
 #include "../includes/dv.h"
+#include "../includes/socket.h"
 
 module RoutingP{
     provides interface Routing;
@@ -29,6 +30,7 @@ module RoutingP{
 
 implementation{
     pack sendRoutePackage;
+    TCPpack* TCPpacket;
     uint16_t revision = 0;
     uint16_t i = 0;
     uint16_t N;
@@ -63,7 +65,8 @@ implementation{
     }
 
     command void Routing.Forwarding(uint16_t src, uint16_t dest, pack *message){
-        dbg(ROUTING_CHANNEL, "Forwarding from %d to %d\n", src, dest);
+        TCPpacket = (TCPpack*) (message->payload);
+        
         //message->payload->SEQ_NUM = 200; // Identifies that we are forwarding
 
         // if(message->protocol == 0)
@@ -71,7 +74,7 @@ implementation{
 
 
         //dbg(ROUTING_CHANNEL, "Protocol is: %d\n", forwardPack->protocol);
-        if(message->protocol == 0 && TableSize > 0){
+        if(((message->protocol == 0) || (message->protocol == 6) || (message->protocol == 7))&& TableSize > 0){
             if(message->dest == TOS_NODE_ID){
                 dbg(ROUTING_CHANNEL,"Destination has been received from %d to %d!\n", message->src,message->dest);
                 return;
@@ -81,9 +84,9 @@ implementation{
             for(i = 0; i < TableSize; i++){
                 //dbg(ROUTING_CHANNEL, "RoutingTable Destination is %d and forwardPack Destination is %d\n", RoutingTable[i].dest, message->dest);
                 if(RoutingTable[i].dest == message->dest){
-                    dbg(ROUTING_CHANNEL, "Moving from %d to %d\n", TOS_NODE_ID, RoutingTable[i].hop);
+                    dbg(ROUTING_CHANNEL, "(%d) Moving from %d to %d\n",i, TOS_NODE_ID, RoutingTable[i].hop);
                     call Sender.send(*message, RoutingTable[i].hop);
-                    return;
+                    break;
                 }
             }
         }
@@ -142,7 +145,7 @@ implementation{
         for(i = 0; i < TableSize; i++){
             RouteSend = RoutingTable[i];//call DV.get(i);
             //dbg(ROUTING_CHANNEL, "Route being sent has Dest: %d Hop: %d Cost: %d\n", RouteSend.dest, RouteSend.hop, RouteSend.cost);
-            makePack(&sendRoutePackage, TOS_NODE_ID, RouteSend.dest, 1 , 5, (uint16_t*)&RouteSend , PACKET_MAX_PAYLOAD_SIZE);
+            makePack(&sendRoutePackage, TOS_NODE_ID, RouteSend.dest, 1 , 5, (uint8_t*)&RouteSend , PACKET_MAX_PAYLOAD_SIZE);
             call Sender.send(sendRoutePackage, AM_BROADCAST_ADDR);
         }
     }
@@ -185,23 +188,20 @@ implementation{
 
     event message_t *ForwardReceive.receive(message_t * msg, void *payload, uint8_t len){
         forwardPack = (pack*) payload;
-
-        // if(forwardPack->protocol == 0)
-        //     dbg(ROUTING_CHANNEL,"coming from %d, going to %d!\n", forwardPack->src,forwardPack->dest);
-
+        TCPpacket = (TCPpack*) (forwardPack->payload);
 
         //dbg(ROUTING_CHANNEL, "Protocol is: %d\n", forwardPack->protocol);
-        if(forwardPack->protocol == 0 && TableSize > 0){
+        if(((forwardPack->protocol == 0) || (forwardPack->protocol == 6) || (forwardPack->protocol == 7))&& TableSize > 0){
             if(forwardPack->dest == TOS_NODE_ID){
-                dbg(ROUTING_CHANNEL,"Destination has been received from %d to %d!\n", forwardPack->src,forwardPack->dest);
-                dbg(ROUTING_CHANNEL, "Package Payload: %s\n", forwardPack->payload);
+                // dbg(ROUTING_CHANNEL,"Destination has been received from %d to %d!\n", forwardPack->src,forwardPack->dest);
+                // dbg(ROUTING_CHANNEL, "Package Payload: %s\n", forwardPack->payload);
                 return msg;
             }
 
             for(i = 0; i < TableSize; i++){
                 //dbg(ROUTING_CHANNEL, "RoutingTable Destination is %d and forwardPack Destination is %d\n", RoutingTable[i].dest, forwardPack->dest);
                 if(RoutingTable[i].dest == forwardPack->dest){
-                    dbg(ROUTING_CHANNEL, "Moving from %d to %d\n", TOS_NODE_ID, RoutingTable[i].hop);
+                    //dbg(ROUTING_CHANNEL, "Moving from %d to %d\n", TOS_NODE_ID, RoutingTable[i].hop);
                     call Sender.send(*forwardPack, RoutingTable[i].hop);
                     return msg;
                 }

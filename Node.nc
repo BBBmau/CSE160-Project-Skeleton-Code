@@ -8,6 +8,7 @@
  */
 #include <Timer.h>
 #include "includes/command.h"
+#include "includes/socket.h"
 #include "includes/packet.h"
 #include "includes/CommandMsg.h"
 #include "includes/sendInfo.h"
@@ -28,11 +29,15 @@ module Node{
    // Project 2
    uses interface Routing;
 
+   // Project 3
+   uses interface Transport;
+
    uses interface CommandHandler;
 }
 
 implementation{
    pack sendPackage;
+   
 
    // Prototypes
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -91,10 +96,67 @@ implementation{
    event void CommandHandler.printLinkState(){}
 
    event void CommandHandler.printDistanceVector(){}
+   
+   // Variables used
+   
+   
+   event void CommandHandler.setTestServer(uint16_t address, uint16_t port){
+      socket_t FD;
+      socket_addr_t socketInfo;
+      dbg(TRANSPORT_CHANNEL, "Setting Test Server\n");
+      
+      FD = call Transport.socket();
+      if(FD == 0){
+         dbg(TRANSPORT_CHANNEL, "Max Sockets Reached\n");
+         return;
+      }
+      socketInfo.addr = address;
+      socketInfo.port = port;
+      
+      dbg(TRANSPORT_CHANNEL, "File Descriptor of Socket for Server: %d\n", FD);
+      
+      if((call Transport.bind(FD, &socketInfo)) == FAIL){
+         dbg(TRANSPORT_CHANNEL, "Failed to Bind File Descriptor\n");
+         return;
+      }
+      dbg(TRANSPORT_CHANNEL, "**Successfully Binded File Descriptor**\n\n");
+   
+      call Transport.listen(FD);
+   }
 
-   event void CommandHandler.setTestServer(){}
+   event void CommandHandler.setTestClient(uint16_t dest, uint16_t srcPort, uint16_t destPort, uint16_t transfer){
+      socket_t FD;
+      socket_addr_t socketInfo;
+      socket_addr_t serverAddress;
+      
+      dbg(TRANSPORT_CHANNEL, "Setting Test Client\n");
+      
+      FD = call Transport.socket();
+      if(FD == 0){
+         dbg(TRANSPORT_CHANNEL, "Max Sockets Reached\n");
+         return;
+      }
 
-   event void CommandHandler.setTestClient(){}
+      dbg(TRANSPORT_CHANNEL, "CLIENT NODE: %d\n", TOS_NODE_ID);
+      socketInfo.port = srcPort;  // Port on Client Side
+      socketInfo.addr = TOS_NODE_ID;
+      if((call Transport.bind(FD, &socketInfo)) == FAIL){
+         dbg(TRANSPORT_CHANNEL, "Failed to Bind File Descriptor\n");
+         return;
+      }
+      dbg(TRANSPORT_CHANNEL, "File Descriptor of Socket for Client: %d\n", FD);
+      dbg(TRANSPORT_CHANNEL, "**Successfully Binded File Descriptor**\n\n");
+      
+      
+      // Information to connect to server
+      serverAddress.addr = dest;
+      serverAddress.port = destPort;
+      // We call connect method here to begin connection to server
+      if((call Transport.connect(FD, &serverAddress)) == SUCCESS){
+         dbg(TRANSPORT_CHANNEL, "Connected Successfully Attempted!\n");
+      }
+   
+   }
 
    event void CommandHandler.setAppServer(){}
 
