@@ -30,8 +30,19 @@ implementation{
     }
 
     command error_t Transport.connectDone(socket_t fd){
-        dbg(TRANSPORT_CHANNEL, "Connection Established!\n");
+        dbg(TRANSPORT_CHANNEL, "Connection Established for Socket %d\n", fd);
+        call acceptedSockets.insert(fd, newStore);
         // Sends back an ACK to server
+        TCPpacket->ACKNUM = packet->seq++;
+        packet->seq++;
+        TCPpacket->flag = 4;
+        packet->protocol = 6;
+        dbg(TRANSPORT_CHANNEL, "SENDING ACK TO SERVER\n");
+        packet->dest = packet->src;
+        packet->src = TOS_NODE_ID;
+
+        dbg(TRANSPORT_CHANNEL, "SENDING FROM %d TO %d\n", packet->src, packet->dest);
+        call Routing.Forwarding(packet->src, packet->dest, packet);        
         return SUCCESS;
     }
 
@@ -240,6 +251,7 @@ implementation{
            socketListener = call socketList.get(fd);
            socketListener.state = LISTEN;
            newFD = call Transport.socket(); // the new socket will be created for clients that want to connect
+           dbg(TRANSPORT_CHANNEL, "New Server Socket FD: %d\n", newFD);
            call serverTimer.startPeriodic(1000);
            return SUCCESS;
        }
